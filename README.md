@@ -32,6 +32,7 @@ A lightweight in-memory key-value database with transaction support, written in 
 
 ```bash
 git clone git@github.com:RiRinat/test_DrWeb_web.git
+cd test_DrWeb_web
 chmod +x deploy.sh
 ./deploy.sh
 ```
