@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: django_app
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - staticfiles:/app/static/
+    env_file:
+      - .env
+    expose:
+      - "8000"
+
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx_server
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - staticfiles:/app/staticfiles
+    depends_on:
+      - web
+
+volumes:
+  staticfiles:

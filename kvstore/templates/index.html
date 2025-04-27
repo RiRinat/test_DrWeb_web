@@ -1,0 +1,24 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>KVStore Terminal</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+</head>
+<body>
+
+    <div id="terminal"></div>
+
+    <div id="inputArea">
+        <input type="text" id="commandInput" placeholder="Enter command...">
+        <button id="sendButton" onclick="sendCommand()">Send</button>
+        <div id="suggestions"></div>
+    </div>
+
+    <script src="{% static 'js/script.js' %}"></script>
+
+</body>
+</html>

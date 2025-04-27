@@ -1,0 +1,95 @@
+body {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: monospace;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Центрируем по горизонтали */
+    min-height: 100vh;
+}
+
+#terminal {
+    background-color: #2d2d2d;
+    padding: 15px; /* Уменьшил паддинг */
+    border-radius: 8px;
+    width: 600px; /* Фиксированная ширина для аккуратного вида */
+    height: 50vh; /* Чуть поменьше высота */
+    overflow-y: auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+#inputArea {
+    display: flex;
+    margin-top: 20px;
+    width: 600px; /* Совпадает с терминалом */
+    position: relative;
+    justify-content: center; /* Центрируем элементы внутри */
+}
+
+#commandInput {
+    width: 70%;
+    padding: 8px; /* Сделал поменьше */
+    border: none;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 14px; /* Немного меньше шрифт */
+}
+
+#sendButton {
+    padding: 8px 16px;
+    margin-left: 10px;
+    background-color: #007acc;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+#sendButton:hover {
+    background-color: #005f99;
+}
+
+#suggestions {
+    position: absolute;
+    left: 7%; /* <-- Выравниваем по началу input */
+    top: 45px; /* ниже инпута */
+    width: 441px;
+    background: #333;
+    border: 1px solid #555;
+    border-radius: 5px;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.2s ease-out;
+    pointer-events: none;
+}
+
+#suggestions.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.suggestion-item {
+    padding: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.suggestion-item:hover, .suggestion-item.active {
+    background-color: #555;
+}
+
+.command {
+    color: #9cdcfe;
+}
+
+.response {
+    color: #ce9178;
+    margin-left: 20px;
+}
