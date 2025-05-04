@@ -3,7 +3,7 @@ name: Deploy Django
 on:
 #  push:
 #    branches:
-#      - dev
+#      - main
 
 jobs:
   lint:
@@ -44,48 +44,67 @@ jobs:
           pip install -r requirements.txt
 
 
+    build:
+      runs-on: ubuntu-latest
+      needs: test
+
+      steps:
+        - name: Check out code
+          uses: actions/checkout@v4
+
+        - name: Log in Docker hub
+          run: echo ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} --password-stdin
+
+        - name: Build Docker image
+          run: docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/Test_DrWeb_Djangoo:${{ github.sha }} .
+
+        - name: Push Docker image in Docker hub
+          run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/Test_DrWeb_Django:${{ github.sha }}
+
   deploy:
-    needs: test
+    name: Deploy to server
     runs-on: ubuntu-latest
+    needs: build
 
     steps:
-    - name: Check out code
-      uses: actions/checkout@v3
+      - name: Connect to server & deploy
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_SERVER_KEY }}
 
-    - name: Define variables
-      run: |
-        echo "DEPLOY_PATH=/opt/habit-tracker" >> $GITHUB_ENV
-        echo "COMPOSE_FILE=docker-compose.yml" >> $GITHUB_ENV
+      - name: Add known hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
 
-    - name: SCP > server
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        source: "."
-        target: "${{ env.DEPLOY_PATH }}"
 
-    - name: env > server
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        script: |
-          echo "${{ secrets.ENV_FILE }}" >> ${{ env.DEPLOY_PATH }}/.env
+      - name: SCP > server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: "."
+          target: "${{ env.DEPLOY_PATH }}"
 
-    - name: Build containers
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SERVER_IP }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        script: |
-          cd ${{ env.DEPLOY_PATH }}
-          sudo docker compose -f ${{ env.COMPOSE_FILE }} pull
-          sudo chmod +x deploy.sh
-          sudo ./deploy.sh
+      - name: env > server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            echo "${{ secrets.ENV_FILE }}" >> ${{ env.DEPLOY_PATH }}/.env
+
+      - name: Deploy to Server
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF' 
+            sudo docker stop Test_DrWeb_Django || true 
+            sudo docker rm Test_DrWeb_Django || true 
+            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/Test_DrWeb_Django:${{ github.sha }}
+            sudo docker run -d --name Test_DrWeb_Django -e SECRET_KEY="${{ secrets.SECRET_KEY }}" -p 8080:80 ${{ secrets.DOCKER_HUB_USERNAME }}/Test_DrWeb_Django:${{ github.sha }}
+          EOF
